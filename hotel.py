@@ -1,14 +1,45 @@
+import sqlite3
 import datetime
 
-class Hotel:
-    def __init__(self, total_rooms=10):
-        self.total_rooms = total_rooms
-        self.rooms = {i: None for i in range(1, total_rooms + 1)}
-        self.customers = {}
+DB_NAME = "hotel.db"
+
+class HotelDB:
+    def __init__(self):
+        self.conn = sqlite3.connect(DB_NAME)
+        self.cursor = self.conn.cursor()
+        self._initialize_tables()
+
+    def _initialize_tables(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS rooms (
+                room_number INTEGER PRIMARY KEY,
+                is_occupied INTEGER DEFAULT 0
+            )
+        ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS customers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                room_number INTEGER,
+                checkin_time TEXT,
+                checkout_time TEXT,
+                FOREIGN KEY (room_number) REFERENCES rooms (room_number)
+            )
+        ''')
+        self.conn.commit()
+
+        # Populate rooms if not already
+        self.cursor.execute("SELECT COUNT(*) FROM rooms")
+        if self.cursor.fetchone()[0] == 0:
+            for i in range(1, 6):  # Initialize 5 rooms
+                self.cursor.execute("INSERT INTO rooms (room_number) VALUES (?)", (i,))
+            self.conn.commit()
 
     def check_availability(self):
+        self.cursor.execute("SELECT room_number FROM rooms WHERE is_occupied = 0")
+        available = [row[0] for row in self.cursor.fetchall()]
         print("\nAvailable Rooms:")
-        available = [room for room, guest in self.rooms.items() if guest is None]
         if not available:
             print("No rooms available.")
         else:
@@ -18,51 +49,68 @@ class Hotel:
         name = input("Enter customer name: ")
         phone = input("Enter phone number: ")
         self.check_availability()
+
         try:
             room = int(input("Enter room number to book: "))
-            if room not in self.rooms or self.rooms[room] is not None:
+            self.cursor.execute("SELECT is_occupied FROM rooms WHERE room_number = ?", (room,))
+            result = self.cursor.fetchone()
+
+            if not result or result[0] == 1:
                 print("Room not available or invalid.")
                 return
-            customer_id = len(self.customers) + 1
-            self.rooms[room] = customer_id
-            self.customers[customer_id] = {
-                "name": name,
-                "phone": phone,
-                "room": room,
-                "checkin": datetime.datetime.now()
-            }
+
+            checkin_time = datetime.datetime.now().isoformat()
+            self.cursor.execute('''
+                INSERT INTO customers (name, phone, room_number, checkin_time)
+                VALUES (?, ?, ?, ?)
+            ''', (name, phone, room, checkin_time))
+            self.cursor.execute("UPDATE rooms SET is_occupied = 1 WHERE room_number = ?", (room,))
+            self.conn.commit()
             print(f"Room {room} booked successfully for {name}.")
         except ValueError:
             print("Invalid input. Room number should be an integer.")
 
     def view_customers(self):
-        if not self.customers:
-            print("No customers found.")
+        self.cursor.execute("SELECT id, name, phone, room_number, checkin_time FROM customers WHERE checkout_time IS NULL")
+        customers = self.cursor.fetchall()
+        if not customers:
+            print("No active customers.")
             return
         print("\nCurrent Customers:")
-        for cid, info in self.customers.items():
-            print(f"ID: {cid}, Name: {info['name']}, Room: {info['room']}, Phone: {info['phone']}, Check-in: {info['checkin']}")
+        for row in customers:
+            print(f"ID: {row[0]}, Name: {row[1]}, Phone: {row[2]}, Room: {row[3]}, Check-in: {row[4]}")
 
     def checkout(self):
         try:
             room = int(input("Enter room number to checkout: "))
-            customer_id = self.rooms.get(room)
-            if customer_id is None:
-                print("Room is not occupied.")
+            self.cursor.execute("SELECT id, checkin_time FROM customers WHERE room_number = ? AND checkout_time IS NULL", (room,))
+            customer = self.cursor.fetchone()
+
+            if not customer:
+                print("Room is not occupied or already checked out.")
                 return
-            customer = self.customers.pop(customer_id)
-            self.rooms[room] = None
+
+            customer_id, checkin_time = customer
             checkout_time = datetime.datetime.now()
-            stay_duration = checkout_time - customer["checkin"]
-            print(f"{customer['name']} has checked out of room {room}. Stay duration: {stay_duration}")
+            checkin_dt = datetime.datetime.fromisoformat(checkin_time)
+            duration = checkout_time - checkin_dt
+
+            self.cursor.execute("UPDATE customers SET checkout_time = ? WHERE id = ?", (checkout_time.isoformat(), customer_id))
+            self.cursor.execute("UPDATE rooms SET is_occupied = 0 WHERE room_number = ?", (room,))
+            self.conn.commit()
+
+            print(f"Customer ID {customer_id} has checked out. Duration of stay: {duration}")
         except ValueError:
             print("Invalid input. Room number should be an integer.")
 
+    def close(self):
+        self.conn.close()
+
 def main():
-    hotel = Hotel(total_rooms=5)
+    hotel = HotelDB()
 
     while True:
-        print("\n--- Hotel Management System ---")
+        print("\n--- Hotel Management System (DB Powered) ---")
         print("1. Book Room")
         print("2. View Customers")
         print("3. Check Room Availability")
@@ -81,6 +129,7 @@ def main():
             hotel.checkout()
         elif choice == '5':
             print("Exiting system.")
+            hotel.close()
             break
         else:
             print("Invalid choice. Please try again.")
