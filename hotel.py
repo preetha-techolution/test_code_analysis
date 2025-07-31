@@ -80,28 +80,6 @@ class HotelDB:
         for row in customers:
             print(f"ID: {row[0]}, Name: {row[1]}, Phone: {row[2]}, Room: {row[3]}, Check-in: {row[4]}")
 
-    def checkout(self):
-        try:
-            room = int(input("Enter room number to checkout: "))
-            self.cursor.execute("SELECT id, checkin_time FROM customers WHERE room_number = ? AND checkout_time IS NULL", (room,))
-            customer = self.cursor.fetchone()
-
-            if not customer:
-                print("Room is not occupied or already checked out.")
-                return
-
-            customer_id, checkin_time = customer
-            checkout_time = datetime.datetime.now()
-            checkin_dt = datetime.datetime.fromisoformat(checkin_time)
-            duration = checkout_time - checkin_dt
-
-            self.cursor.execute("UPDATE customers SET checkout_time = ? WHERE id = ?", (checkout_time.isoformat(), customer_id))
-            self.cursor.execute("UPDATE rooms SET is_occupied = 0 WHERE room_number = ?", (room,))
-            self.conn.commit()
-
-            print(f"Customer ID {customer_id} has checked out. Duration of stay: {duration}")
-        except ValueError:
-            print("Invalid input. Room number should be an integer.")
 
     def close(self):
         self.conn.close()
