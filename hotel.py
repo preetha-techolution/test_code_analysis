@@ -76,7 +76,7 @@ class HotelDB:
         if not customers:
             print("No active customers.")
             return
-        print("\nCurrent Customers:")
+        
         for row in customers:
             print(f"ID: {row[0]}, Name: {row[1]}, Phone: {row[2]}, Room: {row[3]}, Check-in: {row[4]}")
 
