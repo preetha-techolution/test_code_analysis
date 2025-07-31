@@ -20,7 +20,6 @@ def initialize_db(conn):
             phone TEXT NOT NULL,
             room_number INTEGER,
             checkin_time TEXT,
-            checkout_time TEXT,
             FOREIGN KEY (room_number) REFERENCES rooms (room_number)
         )
     ''')
