@@ -45,30 +45,7 @@ class HotelDB:
         else:
             print("Rooms:", available)
 
-    def book_room(self):
-        name = input("Enter customer name: ")
-        phone = input("Enter phone number: ")
-        self.check_availability()
-
-        try:
-            room = int(input("Enter room number to book: "))
-            self.cursor.execute("SELECT is_occupied FROM rooms WHERE room_number = ?", (room,))
-            result = self.cursor.fetchone()
-
-            if not result or result[0] == 1:
-                print("Room not available or invalid.")
-                return
-
-            checkin_time = datetime.datetime.now().isoformat()
-            self.cursor.execute('''
-                INSERT INTO customers (name, phone, room_number, checkin_time)
-                VALUES (?, ?, ?, ?)
-            ''', (name, phone, room, checkin_time))
-            self.cursor.execute("UPDATE rooms SET is_occupied = 1 WHERE room_number = ?", (room,))
-            self.conn.commit()
-            print(f"Room {room} booked successfully for {name}.")
-        except ValueError:
-            print("Invalid input. Room number should be an integer.")
+    
 
     
 
