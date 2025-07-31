@@ -70,16 +70,7 @@ class HotelDB:
         except ValueError:
             print("Invalid input. Room number should be an integer.")
 
-    def view_customers(self):
-        self.cursor.execute("SELECT id, name, phone, room_number, checkin_time FROM customers WHERE checkout_time IS NULL")
-        customers = self.cursor.fetchall()
-        if not customers:
-            print("No active customers.")
-            return
-        
-        for row in customers:
-            print(f"ID: {row[0]}, Name: {row[1]}, Phone: {row[2]}, Room: {row[3]}, Check-in: {row[4]}")
-
+    
 
     def close(self):
         self.conn.close()
