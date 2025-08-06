@@ -60,7 +60,7 @@ def main():
         print("1. Book Room")
         print("3. Check Room Availability")
         print("4. Checkout")
-        print("5. Exit")
+       
 
         choice = input("Enter your choice: ")
 
