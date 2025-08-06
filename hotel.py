@@ -58,6 +58,7 @@ def main():
     while True:
         print("\n--- Hotel Management System (DB Powered) ---")
         print("1. Book Room")
+        print("2. View Customers")
         print("3. Check Room Availability")
         print("4. Checkout")
         print("5. Exit")
