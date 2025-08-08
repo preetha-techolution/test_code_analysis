@@ -59,7 +59,7 @@ def main():
         print("\n--- Hotel Management System (DB Powered) ---")
         print("1. Book Room")
         print("3. Check Room Availability")
-        print("4. Checkout")
+        
        
 
         choice = input("Enter your choice: ")
