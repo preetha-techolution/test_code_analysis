@@ -35,6 +35,16 @@ class HotelDB:
             for i in range(1, 6):  # Initialize 5 rooms
                 self.cursor.execute("INSERT INTO rooms (room_number) VALUES (?)", (i,))
             self.conn.commit()
+
+    def check_availability(self):
+        self.cursor.execute("SELECT room_number FROM rooms WHERE is_occupied = 0")
+        available = [row[0] for row in self.cursor.fetchall()]
+        print("\nAvailable Rooms:")
+        if not available:
+            print("No rooms available.")
+        else:
+            print("Rooms:", available)
+
     
 
     def close(self):
@@ -46,7 +56,7 @@ def main():
     while True:
         print("\n--- Hotel Management System (DB Powered) ---")
         print("1. Book Room")
-        
+        print("3. Check Room Availability")
         
        
 
